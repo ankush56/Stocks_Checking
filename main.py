@@ -50,7 +50,13 @@ for i in range(2):
     a = next(iterator)
     days_list.append(a)
 
-print(days_list)
+
+# Trim tuples in list to get yesterday and day before yesterday max
+yesterday_max = days_list[0][1]['2. high']
+day_before_yesterday_max = days_list[1][1]['2. high']
+
+print(yesterday_max)
+print(day_before_yesterday_max)
 
 
 ## STEP 1: Use https://www.alphavantage.co
