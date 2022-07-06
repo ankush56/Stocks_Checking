@@ -11,7 +11,7 @@ url = "https://www.alphavantage.co/query"
 API_KEY = os.environ.get('API_KEY')
 STOCK = "TSLA"
 COMPANY_NAME = "Tesla Inc"
-
+PERCENTAGE_CHECK = 1
 ##SMS settings
 # account_sid = os.environ.get('account_sid')
 # auth_token = os.environ.get('auth_token')
@@ -28,18 +28,11 @@ parameters = {
 response = requests.get(url, parameters)
 response.raise_for_status()
 data = response.json()
-#print(data)
-# today = datetime.now()
-# yesterday = today - timedelta(1)
-# day_before_yesterday = yesterday - timedelta(1)
-# print(today)
-# print(yesterday)
-# print(day_before_yesterday)
+
 
 timeseries_daily = data['Time Series (Daily)']
 
-# for x in highest_value:
-#     print(highest_value[x])
+
 
 days_list = []
 
@@ -52,11 +45,29 @@ for i in range(2):
 
 
 # Trim tuples in list to get yesterday and day before yesterday max
-yesterday_max = days_list[0][1]['2. high']
-day_before_yesterday_max = days_list[1][1]['2. high']
+yesterday_max = float(days_list[0][1]['2. high'])
+day_before_yesterday_max = float(days_list[1][1]['2. high'])
 
-print(yesterday_max)
-print(day_before_yesterday_max)
+print(f"yesterday_max {yesterday_max}")
+print(f"day_before_yesterday_max {day_before_yesterday_max}")
+
+percentage_amount = (day_before_yesterday_max * PERCENTAGE_CHECK) / 100
+print(f"five_percentage {percentage_amount}")
+
+difference = day_before_yesterday_max - yesterday_max
+print(f"difference {difference}")
+
+if yesterday_max > percentage_amount + day_before_yesterday_max:
+    print(f"stock went up more than {PERCENTAGE_CHECK} % percentage")
+
+elif yesterday_max < day_before_yesterday_max - percentage_amount:
+    print(f"Stock went down by {PERCENTAGE_CHECK} % percent")
+else:
+    print(F"Stock neither went up by {PERCENTAGE_CHECK} %,  neither dropped")
+
+
+
+
 
 
 ## STEP 1: Use https://www.alphavantage.co
