@@ -50,11 +50,11 @@ class Stocks:
 
         if yesterday_max > percentage_amount + day_before_yesterday_max:
             growth = "up"
-            msg = f"{self.stock_name}-{percentage_difference} '🔺'%\nClosing price-{yesterday_max}\nPrevious_Day_Closing-{day_before_yesterday_max}"
+            msg = f"{self.stock_name}-{percentage_difference} '🔺'% \nClosing price-{yesterday_max}\nPrevious_Day_Closing-{day_before_yesterday_max}"
 
         elif yesterday_max < day_before_yesterday_max - percentage_amount:
             growth = "down"
-            msg = f"{self.stock_name}-{percentage_difference} '🔻'%\nClosing price-{yesterday_max}\nPrevious_Day_closing-{day_before_yesterday_max}"
+            msg = f"{self.stock_name}-{percentage_difference} '🔻'% \nClosing price-{yesterday_max}\nPrevious_Day_closing-{day_before_yesterday_max}"
 
         else:
             print(F"Stock neither went up by {self.THRESHOLD_PERCENTAGE_CHECK} %,  neither dropped")
