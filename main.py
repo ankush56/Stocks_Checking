@@ -2,7 +2,6 @@ import requests
 import os
 from twilio.rest import Client
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
 
 load_dotenv()
 
@@ -12,11 +11,47 @@ NEWS_URL = "https://newsapi.org/v2/everything"
 API_KEY = os.environ.get('API_KEY')
 STOCK = "TSLA"
 COMPANY_NAME = "Tesla Inc"
-PERCENTAGE_CHECK = 1
-##SMS settings
-# account_sid = os.environ.get('account_sid')
-# auth_token = os.environ.get('auth_token')
-# client = Client(account_sid, auth_token)
+THRESHOLD_PERCENTAGE_CHECK = 0.5
+
+#SMS settings
+account_sid = os.environ.get('account_sid')
+auth_token = os.environ.get('auth_token')
+client = Client(account_sid, auth_token)
+
+
+news_params = {
+    "q": COMPANY_NAME,
+    "sortBy": "publishedAt,relevancy",
+    "apiKey": os.environ.get('NEWS_API_KEY'),
+    "language": "en",
+}
+
+def get_news_articles():
+    news_response = requests.get(NEWS_URL, news_params)
+    news_response.raise_for_status()
+    news_data = news_response.json()
+
+    articles = news_data["articles"]
+    articles_list = []
+
+    for x in range(0, 3):
+
+        tuple1 = (f"Headline- {articles[x]['title']}", f"Brief- {articles[x]['description']}", f"Link- {articles[x]['url']}")
+        articles_list.append(tuple1)
+    return articles_list
+
+def send_sms(msg):
+    message = client.messages \
+    .create(
+    body=msg,
+    to=os.environ.get('dest'),
+    from_='+18643839494'
+    )
+
+
+def calculate_percentage_diff(amount, difference):
+    result = difference * 100/amount
+    return result
 
 
 parameters = {
@@ -24,7 +59,6 @@ parameters = {
     "symbol": STOCK,
     "apikey": API_KEY
 }
-
 
 response = requests.get(url, parameters)
 response.raise_for_status()
@@ -34,7 +68,7 @@ timeseries_daily = data['Time Series (Daily)']
 
 days_list = []
 
-# We dont know if there is previous day in weekday or holiday in between
+# We don't know if there is previous day in weekday or holiday in between
 # So we convert dict to iterator, so we can iterate with next
 
 iterator = iter(timeseries_daily.items())
@@ -46,47 +80,26 @@ for i in range(2):
 yesterday_max = float(days_list[0][1]['2. high'])
 day_before_yesterday_max = float(days_list[1][1]['2. high'])
 
-# print(f"yesterday_max {yesterday_max}")
-# print(f"day_before_yesterday_max {day_before_yesterday_max}")
 
-percentage_amount = (day_before_yesterday_max * PERCENTAGE_CHECK) / 100
-# print(f"five_percentage {percentage_amount}")
-
+percentage_amount = (day_before_yesterday_max * THRESHOLD_PERCENTAGE_CHECK) / 100
 difference = day_before_yesterday_max - yesterday_max
-# print(f"difference {difference}")
+percentage_difference = calculate_percentage_diff(day_before_yesterday_max, difference)
 
 if yesterday_max > percentage_amount + day_before_yesterday_max:
-    print(f"stock went up more than {PERCENTAGE_CHECK} % percentage")
+    news_list = get_news_articles()
+    msg = f"{STOCK}-{percentage_difference} UP\nHigh-{yesterday_max}\nPrevious Day High {day_before_yesterday_max}\
+    Latest news:- {news_list}"
+    send_sms(msg)
 
 elif yesterday_max < day_before_yesterday_max - percentage_amount:
-    print(f"Stock went down by {PERCENTAGE_CHECK} % percent")
+    news_list = get_news_articles()
+    msg = f"{STOCK}-{percentage_difference} Down\nLatest news:- {news_list}"
+    send_sms(msg)
 
 else:
-    print(F"Stock neither went up by {PERCENTAGE_CHECK} %,  neither dropped")
+    print(F"Stock neither went up by {THRESHOLD_PERCENTAGE_CHECK} %,  neither dropped")
 
 
-news_params = {
-    "q": COMPANY_NAME,
-    "sortBy": "publishedAt,relevancy",
-    "apiKey": os.environ.get('NEWS_API_KEY'),
-    "language": "en",
-}
-
-
-news_response = requests.get(NEWS_URL, news_params)
-news_response.raise_for_status()
-news_data = news_response.json()
-
-
-articles = news_data["articles"]
-articles_list = {}
-
-for x in range(0,4):
-    articles_list.update({f"Headline- {articles[x]['title']}": f"Brief- {articles[x]['description']}"})
-
-for x, y in articles_list.items():
-    print(x)
-    print(y)
 
 ## STEP 1: Use https://www.alphavantage.co
 # When STOCK price increase/decreases by 5% between yesterday and the day before yesterday then print("Get News").
